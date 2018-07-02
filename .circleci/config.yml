@@ -106,22 +106,6 @@ jobs:
     <<: *deploy
     <<: *prod-config
 
-  integration-test-branch:
-    <<: *integration-test
-    <<: *branch-config
-
-  integration-test-dev:
-    <<: *integration-test
-    <<: *dev-config
-
-  integration-test-qa:
-    <<: *integration-test
-    <<: *qa-config
-
-  integration-test-prod:
-    <<: *integration-test
-    <<: *prod-config
-
 workflows:
   version: 2
   
