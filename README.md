@@ -45,7 +45,7 @@ Another approach is to let Odin empty your S3 buckets for you prior to calling t
 
 <!-- Badge links -->
 
-[circleci-badge]: https://circleci.com/gh/Argo-DigitalVentures/odin/tree/master.svg?style=shield&circle-token=356b34a4c3da1576d114614778015eb4f5f6d036
+[circleci-badge]: https://circleci.com/gh/Argo-DigitalVentures/odin/tree/master.svg?style=shield&circle-token=34af583571b13525df7f6b7d5481d29bd17225aa
 [circleci-badge-url]: https://circleci.com/gh/Argo-DigitalVentures/odin
 [prettier-badge]: https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square
 [prettier-badge-url]: #badge
