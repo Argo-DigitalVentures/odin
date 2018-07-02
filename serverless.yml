@@ -10,6 +10,7 @@ provider:
   name: aws
   runtime: nodejs8.10
   stage: local
+  profile: qq-deploy
   environment:
     LOG_LEVEL:
       Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
