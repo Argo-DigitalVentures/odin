@@ -38,3 +38,21 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
+
+# Webpack directories
+.webpack
+
+# Local credentials
+credentials.local.yml
+
+# Transpiled javascript (from testing)
+app/**/*.js*
+
+# Stack outputs
+infrastructure/stack-outputs.yml
+
+# IOPipe temp files
+iopipe_handlers
+
+# npm settings
+.npmrc

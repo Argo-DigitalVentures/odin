@@ -12,7 +12,7 @@ anchors:
   
   container-config: &container-config
     docker:
-      - image: circleci/node
+      - image: circleci/node:8.11.3
         environment:
           TERM: dumb
 
@@ -20,10 +20,16 @@ anchors:
     restore_cache:
       key: dependency-cache-{{ checksum "package.json" }}
 
-  install-serverless-framework: &install-serverless-framework
+  configure-aws-access: &configure-aws-access
     run:
-      name: Install sls globally
-      command: sudo npm i -g serverless
+      name: Configure AWS access
+      command: |
+        mkdir -p ~/.aws
+        cat > ~/.aws/credentials << EOL
+        [qq-deploy]
+        aws_access_key_id = ${!KEY}
+        aws_secret_access_key = ${!SECRET}
+        EOL
 
   filter-feature-branches: &filter-feature-branches
     filters:
@@ -63,15 +69,12 @@ anchors:
     steps:
       - checkout
       - *load-cache
-      - *install-serverless-framework
+      - *configure-aws-access
       - run:
-          name: Configure AWS access
-          command: sls config credentials --provider aws --key ${!KEY} --secret ${!SECRET} --profile qq-deploy
-      - run:
-          name: Deploy to branch
+          name: Deploy stack
           command: |
             [[ ! -z "$STAGE" ]] || STAGE=$CIRCLE_BRANCH
-            sls deploy --stage $STAGE --profile qq-deploy
+            STAGE=$STAGE PROFILE=qq-deploy npm run stack:deploy -s
 
 ## Circle CI configuration, see https://circleci.com/docs/2.0/configuration-reference/
 version: 2
@@ -108,6 +111,15 @@ jobs:
 
 workflows:
   version: 2
+
+  feature-branch:
+    jobs:
+      - install:
+          <<: *filter-feature-branches
+      - deploy-branch:
+          <<: *filter-feature-branches
+          requires:
+            - install
   
   master-branch:
     jobs:
@@ -117,3 +129,16 @@ workflows:
           <<: *filter-master
           requires:
             - install
+      - deploy-qa:
+          <<: *filter-master
+          requires:
+            - deploy-dev
+      - manual-approval:
+          <<: *filter-master
+          type: approval
+          requires:
+            - deploy-qa
+      - deploy-prod:
+          <<: *filter-master
+          requires:
+            - manual-approval

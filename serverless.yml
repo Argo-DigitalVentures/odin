@@ -2,18 +2,20 @@ service:
   name: odin
 
 plugins:
+  - serverless-plugin-iopipe
   - serverless-webpack
-
-custom: ${file(./config.yml)}
+  - serverless-cloudformation-resource-counter
+  - serverless-stack-output
 
 provider:
   name: aws
   runtime: nodejs8.10
-  stage: local
-  profile: qq-deploy
+  stage: ${self:custom.config.stage}
+  profile: ${self:custom.config.profile}
+  region: ${self:custom.config.region}
+  stackTags: ${self:custom.config.tags}
   environment:
-    LOG_LEVEL:
-      Fn::FindInMap: [ LogLevel, '${opt:stage, self:provider.stage}', level ]
+    LOG_LEVEL: ${self:custom.config.logLevel}
     DELETE_STACK_TOPIC:
       Fn::Join:
         - ':'
@@ -25,46 +27,42 @@ provider:
       Resource: '*'
       Action: '*'
 
+custom:
+  odin: ${file(./odin.yml)}
+  config: ${file(./infrastructure/configurations.yml)}
+  # iopipeToken is used to forward monitoring information to IO Pipe
+  iopipeToken: ${self:custom.config.iopipeToken}
+  # output is used by the serverless-stack-output plugin
+  output: { file: ./infrastructure/stack-outputs.yml }
+  properties: ${file(./infrastructure/properties.yml)}
+
 functions:
 
   checkStacks:
-    handler: stacks/check.handler
+    handler: app/check.handler
     events:
       - schedule:
-          rate: ${self:custom.dailyRate}
+          rate: ${self:custom.odin.dailyRate}
           input:
-            staleAfter: ${self:custom.dailyStaleAfter}
-            stagesToRetain: ${self:custom.stagesToRetain}
-            deleteableStatuses: ${self:custom.deleteableStatuses}
+            staleAfter: ${self:custom.odin.dailyStaleAfter}
+            stagesToRetain: ${self:custom.odin.stagesToRetain}
+            deleteableStatuses: ${self:custom.odin.deleteableStatuses}
       - schedule:
-          rate: ${self:custom.hourlyRate}
+          rate: ${self:custom.odin.hourlyRate}
           input:
-            staleAfter: ${self:custom.hourlyStaleAfter}
-            stagesToRetain: ${self:custom.stagesToRetain}
-            deleteableStatuses: ${self:custom.deleteableStatuses}
+            staleAfter: ${self:custom.odin.hourlyStaleAfter}
+            stagesToRetain: ${self:custom.odin.stagesToRetain}
+            deleteableStatuses: ${self:custom.odin.deleteableStatuses}
 
   deleteStacks:
-    handler: stacks/delete.handler
+    handler: app/delete.handler
     events:
       - sns: delete-stack-${opt:stage, self:provider.stage}
     environment:
-      BUCKETS_TO_EMPTY: ${self:custom.bucketsToEmpty}
+      BUCKETS_TO_EMPTY: ${self:custom.odin.bucketsToEmpty}
 
 resources:
   Description: Automated service for destroying temporary stacks (retains production, qa, development, and automation stacks)
-  
-  Mappings:
-    LogLevel:
-      test:
-        level: debug
-      local:
-        level: debug
-      dev:
-        level: debug
-      automation:
-        level: debug
-      production:
-        level: info
   
   Outputs:
 
